@@ -33,11 +33,11 @@ def get_normals(cloud):
 # Helper function to create a yaml friendly dictionary from ROS messages
 def make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose):
     yaml_dict = {}
-    yaml_dict["test_scene_num"] = test_scene_num#.data
-    yaml_dict["arm_name"]  = arm_name#.data
-    yaml_dict["object_name"] = object_name#.data
-    yaml_dict["pick_pose"] = pick_pose#message_converter.convert_ros_message_to_dictionary(pick_pose)
-    yaml_dict["place_pose"] = place_pose#message_converter.convert_ros_message_to_dictionary(place_pose)
+    yaml_dict["test_scene_num"] = test_scene_num.data
+    yaml_dict["arm_name"]  = arm_name.data
+    yaml_dict["object_name"] = object_name.data
+    yaml_dict["pick_pose"] = message_converter.convert_ros_message_to_dictionary(pick_pose)
+    yaml_dict["place_pose"] = message_converter.convert_ros_message_to_dictionary(place_pose)
     return yaml_dict
 
 # Helper function to output to yaml file
@@ -83,7 +83,7 @@ def pcl_callback(pcl_msg):
     passthrough_x.set_filter_limits(axis_min, axis_max)
     # Use filter function to obtain new point cloud.
     cloud_filtered = passthrough_x.filter()
-    test_pub.publish(pcl_to_ros(cloud_filtered))
+
 
     # Statistical outlier removal.
     outlier_filter = cloud_filtered.make_statistical_outlier_filter()
@@ -94,7 +94,7 @@ def pcl_callback(pcl_msg):
     # Any point with mean distance larger than mean distance + x*stddev will be an outlier.
     outlier_filter.set_std_dev_mul_thresh(x)
     cloud_filtered = outlier_filter.filter()
-    
+    #test_pub.publish(pcl_to_ros(cloud_objects)) 
 
     # TODO: RANSAC Plane Segmentation
     seg = cloud_filtered.make_segmenter()
@@ -109,6 +109,7 @@ def pcl_callback(pcl_msg):
     # TODO: Extract inliers and outliers
     cloud_table = cloud_filtered.extract(inliers, negative=False)
     cloud_objects = cloud_filtered.extract(inliers, negative=True)
+      
 
     # TODO: Euclidean Clustering
     location_cloud = XYZRGB_to_XYZ(cloud_objects)
@@ -171,7 +172,7 @@ def pcl_callback(pcl_msg):
 
         # Publish a label into RViz
         label_pos = list(location_cloud[pts_list[0]])
-        label_pos[2] += 0.4
+        label_pos[2] += 0.2
         object_markers_pub.publish(make_label(label, label_pos, index))
 
         # Add the detected object to the list of detected objects.
@@ -197,11 +198,23 @@ def pcl_callback(pcl_msg):
                 centriods.append((np.asscalar(cent[0]), np.asscalar(cent[1]), np.asscalar(cent[2])))
 
     yaml_list = []
+    scene_num = Int32()
+    object_name = String()
+    arm = String()
+    pick_pose = Pose()
+    place_pose = Pose()
+
+    scene_num.data = 2
+    arm.data = 'none'
     for i in range(len(labels)):
-        yaml_dict = make_yaml_dict(3, 'none', labels[i], centriods[i], 'none')
+        object_name.data = labels[i]
+        pick_pose.position.x = centriods[i][0]
+        pick_pose.position.y = centriods[i][1]
+        pick_pose.position.z = centriods[i][2]
+        yaml_dict = make_yaml_dict(scene_num, arm, object_name, pick_pose, place_pose)
         yaml_list.append(yaml_dict)
 
-    send_to_yaml('output_3.yaml', yaml_list)
+    send_to_yaml('output_none.yaml', yaml_list)
 
     #try:
     #    pr2_mover(detected_objects)

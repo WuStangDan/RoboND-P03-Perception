@@ -57,24 +57,44 @@ def pcl_callback(pcl_msg):
     # TODO: Voxel Grid Downsampling
     vox = cloud.make_voxel_grid_filter()
     # Choose voxel size.
-    LEAF_SIZE = 0.01
+    LEAF_SIZE = 0.005
     # Set the voxel size.
     vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
     # Call the filter function to downsample cloud.
     cloud_filtered = vox.filter()
-
+    
 
     # TODO: PassThrough Filter
-    passthrough = cloud_filtered.make_passthrough_filter()
+    passthrough_z = cloud_filtered.make_passthrough_filter()
     # Assign axis and range.
     filter_axis = 'z'
-    passthrough.set_filter_field_name(filter_axis)
+    passthrough_z.set_filter_field_name(filter_axis)
     axis_min = 0.6
     axis_max = 1.1
-    passthrough.set_filter_limits(axis_min, axis_max)
+    passthrough_z.set_filter_limits(axis_min, axis_max)
     # Use filter function to obtain new point cloud.
-    cloud_filtered = passthrough.filter()
+    cloud_filtered = passthrough_z.filter()
+    # Filter in x direction also.
+    passthrough_x = cloud_filtered.make_passthrough_filter()
+    filter_axis = 'x'
+    passthrough_x.set_filter_field_name(filter_axis)
+    axis_min = 0.35
+    axis_max = 2.0
+    passthrough_x.set_filter_limits(axis_min, axis_max)
+    # Use filter function to obtain new point cloud.
+    cloud_filtered = passthrough_x.filter()
+    test_pub.publish(pcl_to_ros(cloud_filtered))
 
+    # Statistical outlier removal.
+    outlier_filter = cloud_filtered.make_statistical_outlier_filter()
+    # Set the number of neighboring points to analyze.
+    outlier_filter.set_mean_k(20)
+    # Threshold scale factor.
+    x = 0.25
+    # Any point with mean distance larger than mean distance + x*stddev will be an outlier.
+    outlier_filter.set_std_dev_mul_thresh(x)
+    cloud_filtered = outlier_filter.filter()
+    
 
     # TODO: RANSAC Plane Segmentation
     seg = cloud_filtered.make_segmenter()

@@ -33,11 +33,11 @@ def get_normals(cloud):
 # Helper function to create a yaml friendly dictionary from ROS messages
 def make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose):
     yaml_dict = {}
-    yaml_dict["test_scene_num"] = test_scene_num.data
-    yaml_dict["arm_name"]  = arm_name.data
-    yaml_dict["object_name"] = object_name.data
-    yaml_dict["pick_pose"] = message_converter.convert_ros_message_to_dictionary(pick_pose)
-    yaml_dict["place_pose"] = message_converter.convert_ros_message_to_dictionary(place_pose)
+    yaml_dict["test_scene_num"] = test_scene_num#.data
+    yaml_dict["arm_name"]  = arm_name#.data
+    yaml_dict["object_name"] = object_name#.data
+    yaml_dict["pick_pose"] = pick_pose#message_converter.convert_ros_message_to_dictionary(pick_pose)
+    yaml_dict["place_pose"] = place_pose#message_converter.convert_ros_message_to_dictionary(place_pose)
     return yaml_dict
 
 # Helper function to output to yaml file
@@ -126,7 +126,7 @@ def pcl_callback(pcl_msg):
 
     # TODO: Create Cluster-Mask Point Cloud to visualize each cluster separately
     cluster_color = get_color_list(len(cluster_indices))
-    print(len(cluster_indices))
+    #print(len(cluster_indices))
     color_cluster_point_list = []
 
     for j, indices in enumerate(cluster_indices):
@@ -180,12 +180,29 @@ def pcl_callback(pcl_msg):
         do.cloud = ros_cluster
         detected_objects.append(do)
     # Publish the list of detected objects
-    rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
+    #rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
     detected_objects_pub.publish(detected_objects)
 
-    # Suggested location for where to invoke your pr2_mover() function within pcl_callback()
-    # Could add some logic to determine whether or not your object detections are robust
-    # before calling pr2_mover()
+
+    # Generate YAML file containing labels and centriods for everything in pick_list.
+    labels = []
+    centriods = []
+    for item in pick_list:
+        for i in range(len(detected_objects)):
+            if detected_objects[i].label == item['name']:
+                print("Found", item['name'])
+                labels.append(item['name'])
+                points_array = ros_to_pcl(detected_objects[i].cloud).to_array()
+                cent = np.mean(points_array, axis=0)
+                centriods.append((np.asscalar(cent[0]), np.asscalar(cent[1]), np.asscalar(cent[2])))
+
+    yaml_list = []
+    for i in range(len(labels)):
+        yaml_dict = make_yaml_dict(3, 'none', labels[i], centriods[i], 'none')
+        yaml_list.append(yaml_dict)
+
+    send_to_yaml('output_3.yaml', yaml_list)
+
     #try:
     #    pr2_mover(detected_objects)
     #except rospy.ROSInterruptException:
@@ -254,6 +271,9 @@ if __name__ == '__main__':
 
     # Initialize color_list
     get_color_list.color_list = []
+
+    # Load object list.
+    pick_list = rospy.get_param('/object_list')
 
     # TODO: Spin while node is not shutdown
     while not rospy.is_shutdown():

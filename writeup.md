@@ -26,7 +26,9 @@
 [image5]: ./images/cluster1.png
 [image6]: ./images/cluster2.png
 [image7]: ./images/model.png
-[image8]: ./images/predict.png
+[image8]: ./images/world2.png
+[image9]: ./images/world1.png
+[image10]: ./images/world3.png
 
 ![Overall Scene][first]
 
@@ -57,4 +59,8 @@ The results for the model trained are shown below.
 ![Model][image7]
 ![Prediction][image8]
 
-For the first world I was able to detect all 3 objects correctly. For the second world (shown above) I was only able to detect 4/5 objects correctly (glue is mislabeled as biscuit). This is odd since in the model results when the true label was glue, biscuits was never guessed once. For the third world the SVM detected 6/8 objects correctly. For this last one, glue was mislabeled as sticky notes, and snacks wasn't detected at all.
+For the first world I was able to detect all 3 objects correctly. For the second world (shown above) I was only able to detect 4/5 objects correctly (glue is mislabeled as biscuit). This is odd since in the model results when the true label was glue, biscuits was never guessed once. For the third world the SVM detected 6/8 objects correctly. For this last one, glue was mislabeled as sticky notes, and snacks wasn't detected at all. 
+
+These results are shown below.
+![World 1][image9]
+![World 3][image10]
